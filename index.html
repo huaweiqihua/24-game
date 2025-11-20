@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quick 24 | 合并消除版</title>
+    <title>Quick 24 | 进阶版</title>
     <style>
         :root {
             --bg-color: #eef2f5;
@@ -12,285 +12,243 @@
             --accent: #007AFF;
             --success: #34C759;
             --error: #FF3B30;
-            /* 新拟态阴影系统 */
-            --shadow-out: 6px 6px 12px #d1d5db, -6px -6px 12px #ffffff;
-            --shadow-in: inset 4px 4px 8px #d1d5db, inset -4px -4px 8px #ffffff;
-            --shadow-float: 10px 20px 30px rgba(0,0,0,0.15);
+            /* 阴影系统 */
+            --shadow-card: 8px 8px 16px #d1d5db, -8px -8px 16px #ffffff;
+            --shadow-sunken: inset 6px 6px 12px #d1d5db, inset -6px -6px 12px #ffffff;
+            --shadow-float: 0 10px 25px rgba(0,122,255,0.25);
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg-color);
-            font-family: -apple-system, sans-serif;
-            display: flex;
-            flex-direction: column;
+            font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+            display: flex; flex-direction: column;
             align-items: center;
-            height: 100vh;
-            height: 100dvh;
+            height: 100dvh; /* 完美适配手机高度 */
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s;
         }
 
-        /* === 头部 === */
+        /* 10秒倒计时红色警报动画 */
+        body.alarm {
+            animation: redFlash 1s infinite;
+        }
+        @keyframes redFlash {
+            0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 59, 48, 0); }
+            50% { box-shadow: inset 0 0 50px 20px rgba(255, 59, 48, 0.3); }
+        }
+
+        /* === 顶部 === */
         .header {
-            width: 100%;
-            padding: 15px 20px;
+            width: 100%; padding: 15px 20px;
             box-sizing: border-box;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             flex: 0 0 auto;
+            z-index: 10;
         }
 
-        .stats-pill {
+        .stats-box {
             background: var(--bg-color);
-            padding: 8px 16px;
-            border-radius: 20px;
-            box-shadow: var(--shadow-out);
-            font-weight: 600;
-            color: var(--text-sub);
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            padding: 8px 14px;
+            border-radius: 16px;
+            box-shadow: 5px 5px 10px #d1d5db, -5px -5px 10px #fff;
+            font-size: 13px; color: var(--text-sub); font-weight: 600;
+            display: flex; gap: 10px;
         }
-        .stats-pill b { color: var(--text-main); }
+        .stats-num { color: var(--text-main); font-weight: bold; margin-left: 2px; }
+        .stats-num.green { color: var(--success); }
+        .stats-num.red { color: var(--error); }
 
-        /* 倒计时圆环 */
-        .timer-wrap {
-            position: relative;
-            width: 56px;
-            height: 56px;
-        }
+        /* 倒计时圈 */
+        .timer-wrap { position: relative; width: 50px; height: 50px; }
         svg.timer-svg { transform: rotate(-90deg); }
-        circle {
-            fill: none;
-            stroke-width: 5;
-            stroke-linecap: round;
-        }
+        circle { fill: none; stroke-width: 4; stroke-linecap: round; }
         .c-bg { stroke: #e0e0e0; }
-        .c-progress { 
-            stroke: var(--accent); 
-            transition: stroke-dashoffset 1s linear;
-        }
+        .c-progress { stroke: var(--accent); transition: stroke-dashoffset 1s linear; }
         .timer-num {
-            position: absolute;
-            top: 50%; left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-weight: bold;
-            font-size: 18px;
-            color: var(--text-main);
+            font-weight: 700; font-size: 16px; color: var(--text-main);
         }
+        .timer-num.urgent { color: var(--error); }
 
-        /* === 游戏主舞台 === */
+        /* === 游戏区 === */
         .stage {
-            flex: 1;
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            flex: 1; width: 100%; max-width: 450px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 0 20px; box-sizing: border-box;
         }
 
-        /* 提示语 */
         .guide-text {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-sub);
-            font-size: 16px;
-            margin-bottom: 20px;
-            transition: all 0.3s;
+            height: 30px; color: var(--text-sub); font-size: 15px;
+            margin-bottom: 10px; transition: all 0.3s;
         }
 
-        /* 卡片容器 */
-        .cards-area {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+        /* 2x2 网格布局 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
             gap: 20px;
             width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-            min-height: 260px; /* 预留空间 */
-            align-items: center;
+            aspect-ratio: 1 / 0.9; /* 略微扁一点点，方便手指够 */
+            margin-bottom: 25px;
         }
 
-        /* 卡片样式 */
+        /* 卡片槽位 */
+        .slot {
+            position: relative;
+            width: 100%; height: 100%;
+            border-radius: 18px;
+        }
+        
+        /* 空槽位虚线框 */
+        .slot.empty {
+            border: 2px dashed #d1d5db;
+            background: rgba(255,255,255,0.3);
+            box-sizing: border-box;
+        }
+
+        /* 卡片实体 */
         .card {
-            width: 90px;
-            height: 120px;
+            width: 100%; height: 100%;
             background: #fff;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
+            border-radius: 18px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            font-size: 42px; /* 字号加大 */
             font-weight: 700;
             color: var(--text-main);
-            box-shadow: var(--shadow-out);
+            box-shadow: var(--shadow-card);
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
-            border: 3px solid transparent;
+            border: 3px solid transparent; /* 预留边框位 */
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         .card .suit {
-            font-size: 16px;
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            opacity: 0.6;
+            font-size: 20px; position: absolute;
+            top: 10px; right: 12px; opacity: 0.5;
         }
 
-        .card.red { color: #ff4757; }
-        .card.black { color: #2f3542; }
+        .card.red { color: #ff3b30; }
+        .card.black { color: #1d1d1f; }
 
-        /* 选中状态 */
+        /* 选中态 */
         .card.selected {
             border-color: var(--accent);
-            transform: translateY(-10px);
+            transform: translateY(-6px) scale(1.02);
             box-shadow: var(--shadow-float);
+            background: #fff;
+            z-index: 2;
         }
 
-        /* 发牌动画 */
+        /* 动画 */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .card.new-born {
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* 移除边框颜色，只保留动画，以免误导用户 */
+        }
+
         @keyframes deal {
-            from { opacity: 0; transform: translateY(100px) scale(0.5); }
+            from { opacity: 0; transform: translateY(50px) scale(0.8); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .card.dealing {
-            animation: deal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-        }
-        /* 新生成的牌 */
-        @keyframes popIn {
-            from { transform: scale(0); }
-            to { transform: scale(1); }
-        }
-        .card.new-born {
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border-color: var(--success); /* 计算出的新牌亮一下绿框 */
+            animation: deal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
         }
 
-        /* === 运算符栏 === */
+        /* === 运算符 === */
         .ops-bar {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 40px;
-            height: 60px;
-            align-items: center;
+            display: flex; gap: 15px; margin-bottom: 20px;
         }
-
         .op-btn {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: none;
+            width: 55px; height: 55px;
+            border-radius: 50%; border: none;
             background: var(--bg-color);
-            box-shadow: var(--shadow-out);
-            font-size: 24px;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            box-shadow: 5px 5px 10px #d1d5db, -5px -5px 10px #fff;
+            font-size: 24px; color: var(--text-main);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.1s;
         }
-
-        .op-btn:active { box-shadow: var(--shadow-in); transform: scale(0.95); }
-        
-        /* 运算符选中状态 */
+        .op-btn:active { box-shadow: var(--shadow-sunken); transform: scale(0.95); }
         .op-btn.active {
-            background: var(--accent);
-            color: #fff;
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
+            background: var(--accent); color: #fff;
+            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2);
         }
 
         /* === 底部按钮 === */
         .controls {
-            width: 90%;
-            max-width: 400px;
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 30px;
+            width: 90%; max-width: 400px;
+            display: flex; gap: 15px; margin-bottom: 30px;
         }
-
         .big-btn {
-            flex: 1;
-            height: 56px;
-            border-radius: 28px;
-            border: none;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
+            flex: 1; padding: 16px 0;
+            border-radius: 25px; border: none;
+            font-size: 16px; font-weight: 700;
+            box-shadow: 6px 6px 12px #d1d5db, -6px -6px 12px #fff;
             transition: transform 0.1s;
-            box-shadow: var(--shadow-out);
         }
-        .big-btn:active { transform: scale(0.98); box-shadow: var(--shadow-in); }
-
+        .big-btn:active { transform: scale(0.98); box-shadow: var(--shadow-sunken); }
         .btn-undo { background: var(--bg-color); color: var(--text-sub); }
         .btn-next { background: var(--text-main); color: #fff; }
-        
-        /* 答案弹窗 */
+
+        /* === 弹窗 === */
         .overlay {
             position: fixed; inset: 0;
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(10px);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            z-index: 100;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
-        
-        .ans-box {
-            background: #fff; padding: 40px;
-            border-radius: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            text-align: center;
+        .result-box {
+            background: #fff; padding: 40px; border-radius: 30px;
+            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
         }
-        .ans-formula { font-size: 28px; color: var(--accent); font-weight: bold; margin: 20px 0; }
-
-        /* 礼花与震动 */
+        .ans-title { color: #999; font-size: 14px; margin-bottom: 10px; }
+        .ans-main { font-size: 32px; color: var(--accent); font-weight: 800; margin-bottom: 20px; }
+        
+        /* 礼花 */
         .confetti { position: absolute; width: 8px; height: 8px; pointer-events: none; animation: fall 2s linear forwards; }
         @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-
     </style>
 </head>
 <body>
 
-    <!-- 顶部 -->
     <div class="header">
-        <div class="stats-pill">
-            正确 <b><span id="score">0</span></b>
+        <div class="stats-box">
+            ✓ <span id="score-correct" class="stats-num green">0</span>
+            <span style="opacity:0.3">|</span>
+            ✕ <span id="score-wrong" class="stats-num red">0</span>
         </div>
         
         <div class="timer-wrap">
-            <svg class="timer-svg" width="56" height="56">
-                <circle class="c-bg" cx="28" cy="28" r="24"></circle>
-                <circle class="c-progress" id="timer-ring" cx="28" cy="28" r="24" stroke-dasharray="151" stroke-dashoffset="0"></circle>
+            <svg class="timer-svg" width="50" height="50">
+                <circle class="c-bg" cx="25" cy="25" r="22"></circle>
+                <circle class="c-progress" id="timer-ring" cx="25" cy="25" r="22" stroke-dasharray="138" stroke-dashoffset="0"></circle>
             </svg>
             <div class="timer-num" id="timer-num">60</div>
         </div>
 
-        <div class="stats-pill" onclick="showAnswer(true)">
-            <span style="font-size:12px">看答案</span>
-        </div>
+        <button style="border:none; background:none; font-weight:600; color:var(--accent); font-size:14px;" onclick="showAnswer()">
+            看答案
+        </button>
     </div>
 
-    <!-- 游戏区 -->
     <div class="stage" onclick="handleBgClick(event)">
         <div class="guide-text" id="guide">选择第一张牌</div>
 
-        <div class="cards-area" id="cards-box">
-            <!-- 卡片由JS生成 -->
+        <!-- 2x2 卡片网格 -->
+        <div class="grid-container" id="grid-box">
+            <!-- JS 生成 4个 slot -->
         </div>
 
         <div class="ops-bar">
@@ -301,85 +259,89 @@
         </div>
     </div>
 
-    <!-- 底部控制 -->
     <div class="controls">
         <button class="big-btn btn-undo" onclick="undo()">撤销</button>
         <button class="big-btn btn-next" onclick="nextLevel(false)">下一题</button>
     </div>
 
-    <!-- 弹窗 -->
     <div class="overlay" id="overlay" onclick="closeOverlay()">
-        <div class="ans-box">
-            <div style="color:#999">参考解法</div>
-            <div class="ans-formula" id="ans-text"></div>
-            <div style="font-size:12px; color:#ccc">点击任意处关闭</div>
+        <div class="result-box">
+            <div class="ans-title" id="overlay-title">参考解法</div>
+            <div class="ans-main" id="ans-text"></div>
+            <div style="font-size:12px; color:#ccc">点击继续</div>
         </div>
     </div>
 
     <script>
-        // --- 游戏状态 ---
+        // 游戏核心状态
         const STATE = {
-            cards: [], // 当前牌堆 [{id, val, suit, isRed}]
+            slots: [null, null, null, null], // 4个槽位，存 Card 对象或 null
             history: [], // 撤销栈
-            selectedId: null, // 当前选中的牌ID
-            selectedOp: null, // 当前选中的操作符
-            solution: '', // 答案文本
+            selectedIdx: null, // 当前选中的槽位索引 (0-3)
+            selectedOp: null,
+            solution: '',
             isPlaying: false,
+            isTimeUp: false,
             timeLeft: 60,
             timerId: null,
-            score: 0
+            correct: 0,
+            wrong: 0
         };
 
-        // 音频上下文
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // --- 音效系统 ---
         function playSound(type) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
+
             if(type === 'tap') {
-                osc.frequency.setValueAtTime(600, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.frequency.setValueAtTime(500, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
                 osc.start(now); osc.stop(now + 0.1);
             } else if(type === 'merge') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(300, now);
-                osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+                osc.frequency.linearRampToValueAtTime(500, now + 0.15);
                 gain.gain.setValueAtTime(0.1, now);
                 gain.gain.linearRampToValueAtTime(0, now + 0.2);
                 osc.start(now); osc.stop(now + 0.2);
             } else if(type === 'win') {
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(400, now);
-                osc.frequency.setValueAtTime(600, now + 0.1);
-                osc.frequency.setValueAtTime(1000, now + 0.2);
+                osc.frequency.setValueAtTime(800, now + 0.2);
                 gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.6);
-                osc.start(now); osc.stop(now + 0.6);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                osc.start(now); osc.stop(now + 0.8);
+            } else if(type === 'alarm') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
             }
         }
 
         // --- 核心逻辑 ---
 
-        // 生成题目
         function generateLevel() {
-            // 简单的24点求解器
+            // 求解器
             const solve = (nums) => {
-                if (nums.length === 1) return Math.abs(nums[0] - 24) < 0.01 ? nums[0].toString() : null;
+                if (nums.length === 1) return Math.abs(nums[0] - 24) < 0.001 ? nums[0].toString() : null;
                 for (let i = 0; i < nums.length; i++) {
                     for (let j = 0; j < nums.length; j++) {
                         if (i === j) continue;
                         const rest = nums.filter((_, idx) => idx !== i && idx !== j);
                         const a = nums[i], b = nums[j];
-                        // 递归检查 + - * /
-                        let res;
-                        if(res = solve([...rest, a+b])) return `(${a}+${b})`;
-                        if(res = solve([...rest, a-b])) return `(${a}-${b})`;
-                        if(res = solve([...rest, a*b])) return `(${a}×${b})`;
-                        if(b!==0 && (res = solve([...rest, a/b]))) return `(${a}÷${b})`;
+                        let r;
+                        if(r=solve([...rest, a+b])) return `(${a}+${b})`;
+                        if(r=solve([...rest, a-b])) return `(${a}-${b})`;
+                        if(r=solve([...rest, a*b])) return `(${a}×${b})`;
+                        if(b!==0 && (r=solve([...rest, a/b]))) return `(${a}÷${b})`;
                     }
                 }
                 return null;
@@ -388,301 +350,313 @@
             let nums, sol;
             do {
                 nums = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
-                // 暴力求解验证是否有解 (简化版，只存第一个解)
-                // 为了真正玩得通，这里用简单的穷举库思想
-                sol = getSolution(nums); 
+                sol = solve(nums);
             } while (!sol);
 
             STATE.solution = sol;
-            // 构造卡片对象
             const suits = ['♠', '♥', '♣', '♦'];
-            STATE.cards = nums.map((n, i) => ({
-                id: Date.now() + i,
+            
+            // 填充4个槽位
+            STATE.slots = nums.map(n => ({
+                id: Math.random(), // 唯一标识用于动画
                 val: n,
                 suit: suits[Math.floor(Math.random() * 4)],
-                isRed: false // 后面判断
+                isRed: false,
+                isNew: false
             }));
-            STATE.cards.forEach(c => c.isRed = (c.suit === '♥' || c.suit === '♦'));
+            STATE.slots.forEach(c => c.isRed = (c.suit === '♥' || c.suit === '♦'));
 
+            // 重置状态
             STATE.history = [];
-            STATE.selectedId = null;
+            STATE.selectedIdx = null;
             STATE.selectedOp = null;
             STATE.isPlaying = true;
+            STATE.isTimeUp = false;
             
-            renderCards(true); // true = 开局发牌动画
+            document.body.classList.remove('alarm'); // 清除报警
+            renderGrid(true); // 发牌动画
             resetTimer();
             updateUI();
         }
-        
-        // 更加靠谱的求解器，用于生成答案
-        function getSolution(nums) {
-            const ops = ['+', '-', '*', '/'];
-            const permute = (arr) => {
-                if (arr.length <= 1) return [arr];
-                let res = [];
-                for(let i=0; i<arr.length; i++){
-                    const rest = permute([...arr.slice(0,i), ...arr.slice(i+1)]);
-                    rest.forEach(sub => res.push([arr[i], ...sub]));
-                }
-                return res;
-            }
-            
-            for(let list of permute(nums)) {
-                for(let o1 of ops) for(let o2 of ops) for(let o3 of ops) {
-                    try {
-                        const exps = [
-                            `(({0}{1}{2}){3}{4}){5}{6}`,
-                            `({0}{1}{2}){3}({4}{5}{6})`
-                        ];
-                        for(let pat of exps) {
-                            let s = pat.replace('{0}', list[0]).replace('{1}', o1).replace('{2}', list[1])
-                                       .replace('{3}', o2).replace('{4}', list[2]).replace('{5}', o3).replace('{6}', list[3]);
-                            if(Math.abs(eval(s) - 24) < 0.001) return s.replace(/\*/g,'×').replace(/\//g,'÷');
-                        }
-                    } catch(e){}
-                }
-            }
-            return null;
-        }
 
-        // 渲染卡片
-        function renderCards(isDeal = false) {
-            const box = document.getElementById('cards-box');
-            box.innerHTML = '';
-            
-            STATE.cards.forEach((card, index) => {
-                const el = document.createElement('div');
-                el.className = `card ${card.isRed ? 'red' : 'black'} ${STATE.selectedId === card.id ? 'selected' : ''}`;
-                if (isDeal) {
-                    el.classList.add('dealing');
-                    el.style.animationDelay = (index * 0.1) + 's';
-                } else if (card.isNew) {
-                    el.classList.add('new-born');
-                }
+        // 渲染网格 (核心视觉改动)
+        function renderGrid(isDeal = false) {
+            const container = document.getElementById('grid-box');
+            container.innerHTML = '';
 
-                // 修正：数字显示优化
-                let displayVal = card.val;
-                // 如果是整数显示整数，如果是有小数，保留最多2位
-                if (!Number.isInteger(displayVal)) {
-                    displayVal = parseFloat(displayVal.toFixed(2));
+            STATE.slots.forEach((card, idx) => {
+                const slotEl = document.createElement('div');
+                slotEl.className = `slot ${card ? '' : 'empty'}`;
+                
+                if (card) {
+                    const cardEl = document.createElement('div');
+                    // 类名控制：颜色、选中态、新生成动画、发牌动画
+                    let classes = `card ${card.isRed ? 'red' : 'black'}`;
+                    if (STATE.selectedIdx === idx) classes += ' selected';
+                    if (card.isNew) classes += ' new-born';
+                    if (isDeal) {
+                        classes += ' dealing';
+                        cardEl.style.animationDelay = (idx * 0.08) + 's';
+                    }
+                    
+                    cardEl.className = classes;
+                    
+                    // 格式化数字
+                    let disp = parseFloat(card.val.toFixed(2));
+                    // 转换 JQKA (如果不想要JQKA转换，直接注释下面这行)
+                    // if(disp===1) disp='A'; else if(disp===11) disp='J'; else if(disp===12) disp='Q'; else if(disp===13) disp='K';
+
+                    cardEl.innerHTML = `
+                        <div>${disp}</div>
+                        <div class="suit">${card.suit}</div>
+                    `;
+                    
+                    cardEl.onclick = (e) => {
+                        e.stopPropagation();
+                        onSlotClick(idx);
+                    };
+                    slotEl.appendChild(cardEl);
                 }
-                
-                el.innerHTML = `
-                    <div>${displayVal}</div>
-                    <div class="suit">${card.suit}</div>
-                `;
-                
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    onCardClick(card.id);
-                };
-                box.appendChild(el);
+                container.appendChild(slotEl);
             });
         }
 
-        // 点击背景取消选中
         function handleBgClick(e) {
-            if(e.target.classList.contains('stage') || e.target.classList.contains('cards-area')) {
-                STATE.selectedId = null;
+            // 点击背景取消选中
+            if (e.target.classList.contains('stage') || e.target.classList.contains('grid-container')) {
+                STATE.selectedIdx = null;
                 STATE.selectedOp = null;
                 updateUI();
             }
         }
 
-        // 卡片点击逻辑
-        function onCardClick(id) {
-            if(!STATE.isPlaying) return;
-            playSound('tap');
-
-            // 情况1: 还没有选过牌
-            if (STATE.selectedId === null) {
-                STATE.selectedId = id;
+        function onSlotClick(idx) {
+            if (!STATE.isPlaying || STATE.isTimeUp) return;
+            
+            // 1. 没选过 -> 选中
+            if (STATE.selectedIdx === null) {
+                playSound('tap');
+                STATE.selectedIdx = idx;
                 updateUI();
                 return;
             }
 
-            // 情况2: 点击了已经选中的牌 -> 取消选中
-            if (STATE.selectedId === id) {
-                STATE.selectedId = null;
-                STATE.selectedOp = null; // 同时重置符号
+            // 2. 点自己 -> 取消
+            if (STATE.selectedIdx === idx) {
+                STATE.selectedIdx = null;
+                STATE.selectedOp = null;
                 updateUI();
                 return;
             }
 
-            // 情况3: 选了牌A，没选符号，又点了牌B -> 切换选中为B
-            if (STATE.selectedId !== null && STATE.selectedOp === null) {
-                STATE.selectedId = id;
+            // 3. 换人 (还没选符号)
+            if (STATE.selectedOp === null) {
+                playSound('tap');
+                STATE.selectedIdx = idx;
                 updateUI();
                 return;
             }
 
-            // 情况4: 选了牌A，选了符号，点了牌B -> **执行计算**
-            if (STATE.selectedId !== null && STATE.selectedOp !== null) {
-                performCalculation(STATE.selectedId, STATE.selectedOp, id);
-            }
+            // 4. 合并计算 (有选人 + 有符号 + 点了另一个人)
+            performMerge(STATE.selectedIdx, idx, STATE.selectedOp);
         }
 
-        // 符号点击逻辑
         function selectOp(op) {
-            if(!STATE.isPlaying || STATE.selectedId === null) return;
+            if (!STATE.isPlaying || STATE.isTimeUp || STATE.selectedIdx === null) return;
             playSound('tap');
             STATE.selectedOp = op;
             updateUI();
         }
 
-        // 执行计算
-        function performCalculation(id1, op, id2) {
-            const c1 = STATE.cards.find(c => c.id === id1);
-            const c2 = STATE.cards.find(c => c.id === id2);
-            if(!c1 || !c2) return;
+        function performMerge(idx1, idx2, op) {
+            const c1 = STATE.slots[idx1];
+            const c2 = STATE.slots[idx2];
+            if (!c1 || !c2) return;
 
-            let result = 0;
+            let res = 0;
             switch(op) {
-                case '+': result = c1.val + c2.val; break;
-                case '-': result = c1.val - c2.val; break;
-                case '*': result = c1.val * c2.val; break;
+                case '+': res = c1.val + c2.val; break;
+                case '-': res = c1.val - c2.val; break;
+                case '*': res = c1.val * c2.val; break;
                 case '/': 
-                    if(c2.val === 0) return; // 简单的防除零
-                    result = c1.val / c2.val; break;
+                    if(c2.val === 0) return; 
+                    res = c1.val / c2.val; break;
             }
 
-            // 存入历史以便撤销
-            STATE.history.push(JSON.parse(JSON.stringify(STATE.cards)));
+            // 记录历史 (Deep Copy)
+            STATE.history.push(JSON.parse(JSON.stringify(STATE.slots)));
 
-            // 生成新牌
+            // 逻辑：c1 移动到 c2 的位置，c1 变空
+            // 新卡片
             const newCard = {
-                id: Date.now(),
-                val: result,
-                suit: c1.suit, // 继承第一张牌花色
+                id: Math.random(),
+                val: res,
+                suit: c1.suit,
                 isRed: c1.isRed,
-                isNew: true
+                isNew: true // 触发动画标记
             };
 
-            // 更新牌堆：移除id1和id2，加入newCard
-            STATE.cards = STATE.cards.filter(c => c.id !== id1 && c.id !== id2);
-            STATE.cards.push(newCard);
+            STATE.slots[idx2] = newCard; // 结果在目标位
+            STATE.slots[idx1] = null;    // 原位变成空虚线框
 
-            // 重置状态
-            STATE.selectedId = null;
+            // 重置
+            STATE.selectedIdx = null;
             STATE.selectedOp = null;
             playSound('merge');
-            renderCards();
+            renderGrid();
             updateUI();
 
-            // 检查胜利
-            if(STATE.cards.length === 1) {
-                // 容差 0.01
-                if(Math.abs(STATE.cards[0].val - 24) < 0.01) {
+            // 检查是否剩下1张牌
+            const remaining = STATE.slots.filter(x => x !== null);
+            if (remaining.length === 1) {
+                if (Math.abs(remaining[0].val - 24) < 0.01) {
                     handleWin();
                 }
             }
         }
 
-        // 撤销
         function undo() {
-            if(STATE.history.length > 0) {
-                STATE.cards = STATE.history.pop();
-                STATE.selectedId = null;
+            if (STATE.history.length > 0 && STATE.isPlaying && !STATE.isTimeUp) {
+                STATE.slots = STATE.history.pop();
+                STATE.selectedIdx = null;
                 STATE.selectedOp = null;
-                renderCards();
+                renderGrid();
                 updateUI();
             }
         }
 
         function updateUI() {
-            // 更新提示文字
+            // 引导文字
             const guide = document.getElementById('guide');
-            if(STATE.selectedId === null) {
-                guide.innerText = "请选择一张牌";
+            if (STATE.selectedIdx === null) {
+                guide.innerText = "点击一张卡牌";
                 guide.style.color = "#888";
             } else if (STATE.selectedOp === null) {
-                guide.innerText = "请选择运算符";
+                guide.innerText = "选择运算符号";
                 guide.style.color = "var(--text-main)";
             } else {
-                guide.innerText = "请选择第二张牌进行合并";
+                guide.innerText = "点击另一张卡牌合并";
                 guide.style.color = "var(--accent)";
             }
 
-            // 更新运算符按钮状态
+            // 符号按钮高亮
             document.querySelectorAll('.op-btn').forEach(btn => {
-                if(btn.dataset.op === STATE.selectedOp) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                btn.classList.toggle('active', btn.dataset.op === STATE.selectedOp);
             });
 
-            // 更新选中牌的样式在 renderCards 里处理了
-            renderCards(); 
+            // 刷新Grid已经在renderGrid做了
+            if(!STATE.isPlaying && !STATE.isTimeUp) return; // 游戏结束时不强行刷新grid，保留最后状态
+            renderGrid();
         }
 
-        // 胜利处理
         function handleWin() {
             STATE.isPlaying = false;
             clearInterval(STATE.timerId);
             playSound('win');
-            STATE.score++;
-            document.getElementById('score').innerText = STATE.score;
+            STATE.correct++;
+            updateStats();
             
-            const guide = document.getElementById('guide');
-            guide.innerText = "算对了！";
-            guide.style.color = "var(--success)";
+            document.body.classList.remove('alarm');
+            document.getElementById('guide').innerText = "Success! = 24";
+            document.getElementById('guide').style.color = "var(--success)";
             
             fireConfetti();
-            setTimeout(() => nextLevel(true), 1500);
+            setTimeout(() => nextLevel(true), 1200);
+        }
+
+        function updateStats() {
+            document.getElementById('score-correct').innerText = STATE.correct;
+            document.getElementById('score-wrong').innerText = STATE.wrong;
         }
 
         function nextLevel(auto) {
+            if (!auto && STATE.isPlaying && !STATE.isTimeUp) {
+                // 主动放弃算错
+                STATE.wrong++;
+                updateStats();
+            }
             document.getElementById('overlay').classList.remove('active');
             generateLevel();
         }
 
+        // 修改：只要有题目，不管是否在玩（例如超时），都可以看答案
         function showAnswer() {
-            if(!STATE.isPlaying) return;
-            document.getElementById('ans-text').innerText = STATE.solution || "无解";
+            if (!STATE.solution) return;
+            
+            // 如果还在玩的时候看答案，算放弃
+            if (STATE.isPlaying && !STATE.isTimeUp) {
+                STATE.wrong++;
+                STATE.isPlaying = false;
+                clearInterval(STATE.timerId);
+                document.body.classList.remove('alarm');
+                updateStats();
+            }
+            
+            document.getElementById('overlay-title').innerText = "本题参考答案";
+            document.getElementById('ans-text').innerText = STATE.solution;
             document.getElementById('overlay').classList.add('active');
         }
 
         function closeOverlay() {
             document.getElementById('overlay').classList.remove('active');
+            // 如果是从“超时状态”查看答案后关闭，自动下一题
+            if (STATE.isTimeUp) {
+                nextLevel(true);
+            }
         }
 
-        // 计时器
         function resetTimer() {
             clearInterval(STATE.timerId);
             STATE.timeLeft = 60;
             const ring = document.getElementById('timer-ring');
             const num = document.getElementById('timer-num');
             
-            // 151 是 2*PI*24
+            // 138 = 2*PI*22
+            const totalDash = 138;
             ring.style.strokeDashoffset = 0;
             num.innerText = 60;
+            num.classList.remove('urgent');
 
             STATE.timerId = setInterval(() => {
                 STATE.timeLeft--;
                 num.innerText = STATE.timeLeft;
-                const offset = 151 - (STATE.timeLeft / 60) * 151;
+                const offset = totalDash - (STATE.timeLeft / 60) * totalDash;
                 ring.style.strokeDashoffset = offset;
 
-                if(STATE.timeLeft <= 0) {
+                // 10秒警报
+                if (STATE.timeLeft <= 10) {
+                    num.classList.add('urgent');
+                    document.body.classList.add('alarm');
+                    // 每一秒响一下滴声
+                    playSound('alarm');
+                }
+
+                if (STATE.timeLeft <= 0) {
                     clearInterval(STATE.timerId);
                     STATE.isPlaying = false;
+                    STATE.isTimeUp = true; // 标记为超时状态
+                    STATE.wrong++; // 超时算错
+                    updateStats();
+                    document.body.classList.remove('alarm');
                     document.getElementById('guide').innerText = "时间到！";
+                    document.getElementById('guide').style.color = "var(--error)";
+                    
+                    // 自动弹窗显示答案
                     showAnswer();
+                    document.getElementById('overlay-title').innerText = "时间到 (已计入错误)";
                 }
             }, 1000);
         }
 
-        // 礼花特效
         function fireConfetti() {
-            for(let i=0; i<40; i++) {
+            for(let i=0; i<50; i++) {
                 const d = document.createElement('div');
                 d.className = 'confetti';
                 d.style.left = Math.random()*100 + 'vw';
-                d.style.backgroundColor = `hsl(${Math.random()*360}, 80%, 50%)`;
-                d.style.animationDuration = (Math.random()*1.5+1) + 's';
+                d.style.backgroundColor = `hsl(${Math.random()*360}, 80%, 60%)`;
+                d.style.animationDuration = (Math.random()*1.5 + 1) + 's';
                 document.body.appendChild(d);
-                setTimeout(()=>d.remove(), 2500);
+                setTimeout(() => d.remove(), 2500);
             }
         }
 
