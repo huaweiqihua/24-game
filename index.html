@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quick 24 | 进阶版</title>
+    <title>Quick 24 | 终极版</title>
     <style>
         :root {
             --bg-color: #eef2f5;
@@ -12,10 +12,14 @@
             --accent: #007AFF;
             --success: #34C759;
             --error: #FF3B30;
-            /* 阴影系统 */
-            --shadow-card: 8px 8px 16px #d1d5db, -8px -8px 16px #ffffff;
-            --shadow-sunken: inset 6px 6px 12px #d1d5db, inset -6px -6px 12px #ffffff;
-            --shadow-float: 0 10px 25px rgba(0,122,255,0.25);
+            /* 状态背景色 */
+            --bg-win: #e8f5e9;  /* 浅绿 */
+            --bg-fail: #ffebee; /* 浅红 */
+            
+            /* 阴影 */
+            --shadow-card: 8px 8px 16px rgba(0,0,0,0.1), -8px -8px 16px rgba(255,255,255,0.8);
+            --shadow-sunken: inset 4px 4px 8px rgba(0,0,0,0.05), inset -4px -4px 8px rgba(255,255,255,0.8);
+            --shadow-float: 0 15px 30px rgba(0,122,255,0.2);
         }
 
         body {
@@ -24,20 +28,22 @@
             font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
             display: flex; flex-direction: column;
             align-items: center;
-            height: 100dvh; /* 完美适配手机高度 */
+            height: 100dvh;
             overflow: hidden;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s;
+            transition: background-color 0.5s ease;
         }
 
-        /* 10秒倒计时红色警报动画 */
-        body.alarm {
-            animation: redFlash 1s infinite;
-        }
+        /* 胜利/失败背景状态类 */
+        body.state-win { background-color: var(--bg-win); }
+        body.state-fail { background-color: var(--bg-fail); }
+
+        /* 10秒倒计时红色警报 */
+        body.alarm { animation: redFlash 1s infinite; }
         @keyframes redFlash {
             0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 59, 48, 0); }
-            50% { box-shadow: inset 0 0 50px 20px rgba(255, 59, 48, 0.3); }
+            50% { box-shadow: inset 0 0 50px 20px rgba(255, 59, 48, 0.2); }
         }
 
         /* === 顶部 === */
@@ -45,27 +51,27 @@
             width: 100%; padding: 15px 20px;
             box-sizing: border-box;
             display: flex; justify-content: space-between; align-items: center;
-            flex: 0 0 auto;
-            z-index: 10;
+            flex: 0 0 auto; z-index: 10;
         }
 
         .stats-box {
-            background: var(--bg-color);
+            background: rgba(255,255,255,0.6);
             padding: 8px 14px;
             border-radius: 16px;
-            box-shadow: 5px 5px 10px #d1d5db, -5px -5px 10px #fff;
+            box-shadow: var(--shadow-card);
             font-size: 13px; color: var(--text-sub); font-weight: 600;
             display: flex; gap: 10px;
+            backdrop-filter: blur(5px);
         }
-        .stats-num { color: var(--text-main); font-weight: bold; margin-left: 2px; }
-        .stats-num.green { color: var(--success); }
-        .stats-num.red { color: var(--error); }
+        .stats-num { font-weight: bold; margin-left: 2px; }
+        .green { color: var(--success); }
+        .red { color: var(--error); }
 
-        /* 倒计时圈 */
+        /* 倒计时 */
         .timer-wrap { position: relative; width: 50px; height: 50px; }
         svg.timer-svg { transform: rotate(-90deg); }
         circle { fill: none; stroke-width: 4; stroke-linecap: round; }
-        .c-bg { stroke: #e0e0e0; }
+        .c-bg { stroke: rgba(0,0,0,0.1); }
         .c-progress { stroke: var(--accent); transition: stroke-dashoffset 1s linear; }
         .timer-num {
             position: absolute; top: 50%; left: 50%;
@@ -74,9 +80,9 @@
         }
         .timer-num.urgent { color: var(--error); }
 
-        /* === 游戏区 === */
+        /* === 游戏舞台 === */
         .stage {
-            flex: 1; width: 100%; max-width: 450px;
+            flex: 1; width: 100%; max-width: 400px; /* 限制宽度防止在大屏太散 */
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             padding: 0 20px; box-sizing: border-box;
@@ -84,150 +90,151 @@
 
         .guide-text {
             height: 30px; color: var(--text-sub); font-size: 15px;
-            margin-bottom: 10px; transition: all 0.3s;
+            margin-bottom: 15px; transition: all 0.3s;
+            font-weight: 500;
         }
 
-        /* 2x2 网格布局 */
+        /* 2x2 网格 */
         .grid-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 20px;
+            gap: 15px;
             width: 100%;
-            aspect-ratio: 1 / 0.9; /* 略微扁一点点，方便手指够 */
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
-        /* 卡片槽位 */
+        /* 槽位：定义宽高比为 3:4 (0.75) */
         .slot {
             position: relative;
-            width: 100%; height: 100%;
-            border-radius: 18px;
+            width: 100%;
+            aspect-ratio: 3 / 4; /* 关键修改：3:4 比例 */
+            border-radius: 16px;
         }
         
-        /* 空槽位虚线框 */
         .slot.empty {
-            border: 2px dashed #d1d5db;
-            background: rgba(255,255,255,0.3);
+            border: 2px dashed rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.2);
             box-sizing: border-box;
         }
 
-        /* 卡片实体 */
+        /* 卡片 */
         .card {
             width: 100%; height: 100%;
             background: #fff;
-            border-radius: 18px;
+            border-radius: 16px;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            font-size: 42px; /* 字号加大 */
-            font-weight: 700;
+            font-size: 42px; font-weight: 700;
             color: var(--text-main);
             box-shadow: var(--shadow-card);
             cursor: pointer;
             position: relative;
-            border: 3px solid transparent; /* 预留边框位 */
-            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 3px solid transparent;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性过渡 */
         }
 
         .card .suit {
-            font-size: 20px; position: absolute;
-            top: 10px; right: 12px; opacity: 0.5;
+            font-size: 22px; position: absolute;
+            top: 12px; right: 12px; opacity: 0.6;
         }
 
-        .card.red { color: #ff3b30; }
-        .card.black { color: #1d1d1f; }
+        .card.red { color: #ff453a; }
+        .card.black { color: #2c3e50; }
 
-        /* 选中态 */
+        /* 选中状态 */
         .card.selected {
             border-color: var(--accent);
-            transform: translateY(-6px) scale(1.02);
+            transform: translateY(-8px) scale(1.03);
             box-shadow: var(--shadow-float);
-            background: #fff;
-            z-index: 2;
+            z-index: 5;
         }
 
         /* 动画 */
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .card.new-born {
-            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            /* 移除边框颜色，只保留动画，以免误导用户 */
-        }
-
+        .card.dealing { animation: deal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
         @keyframes deal {
-            from { opacity: 0; transform: translateY(50px) scale(0.8); }
+            from { opacity: 0; transform: translateY(40px) scale(0.8); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .card.dealing {
-            animation: deal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+
+        .card.new-born { animation: popIn 0.4s ease-out; }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
         /* === 运算符 === */
         .ops-bar {
-            display: flex; gap: 15px; margin-bottom: 20px;
+            display: flex; gap: 12px; margin-bottom: 20px;
         }
         .op-btn {
-            width: 55px; height: 55px;
+            width: 56px; height: 56px;
             border-radius: 50%; border: none;
-            background: var(--bg-color);
-            box-shadow: 5px 5px 10px #d1d5db, -5px -5px 10px #fff;
-            font-size: 24px; color: var(--text-main);
+            background: rgba(255,255,255,0.8);
+            box-shadow: var(--shadow-card);
+            font-size: 26px; color: var(--text-main);
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.1s;
+            transition: all 0.15s;
+            backdrop-filter: blur(4px);
         }
-        .op-btn:active { box-shadow: var(--shadow-sunken); transform: scale(0.95); }
+        .op-btn:active { box-shadow: var(--shadow-sunken); transform: scale(0.92); }
         .op-btn.active {
             background: var(--accent); color: #fff;
-            box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,122,255,0.3);
         }
 
         /* === 底部按钮 === */
         .controls {
-            width: 90%; max-width: 400px;
+            width: 90%; max-width: 360px;
             display: flex; gap: 15px; margin-bottom: 30px;
         }
         .big-btn {
-            flex: 1; padding: 16px 0;
+            flex: 1; padding: 15px 0;
             border-radius: 25px; border: none;
-            font-size: 16px; font-weight: 700;
-            box-shadow: 6px 6px 12px #d1d5db, -6px -6px 12px #fff;
+            font-size: 16px; font-weight: 600;
+            box-shadow: var(--shadow-card);
+            background: rgba(255,255,255,0.9);
+            color: var(--text-main);
             transition: transform 0.1s;
         }
-        .big-btn:active { transform: scale(0.98); box-shadow: var(--shadow-sunken); }
-        .btn-undo { background: var(--bg-color); color: var(--text-sub); }
+        .big-btn:active { transform: scale(0.96); }
         .btn-next { background: var(--text-main); color: #fff; }
 
         /* === 弹窗 === */
         .overlay {
             position: fixed; inset: 0;
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             display: flex; align-items: center; justify-content: center;
             opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
+        
         .result-box {
             background: #fff; padding: 40px; border-radius: 30px;
-            text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            text-align: center; width: 80%; max-width: 300px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .ans-title { color: #999; font-size: 14px; margin-bottom: 10px; }
-        .ans-main { font-size: 32px; color: var(--accent); font-weight: 800; margin-bottom: 20px; }
+        .overlay.active .result-box { transform: scale(1); }
         
+        .ans-title { color: #999; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .ans-main { font-size: 36px; color: var(--text-main); font-weight: 800; margin-bottom: 25px; }
+
         /* 礼花 */
-        .confetti { position: absolute; width: 8px; height: 8px; pointer-events: none; animation: fall 2s linear forwards; }
+        .confetti { position: absolute; width: 8px; height: 8px; pointer-events: none; animation: fall 2.5s linear forwards; }
         @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="stats-box">
-            ✓ <span id="score-correct" class="stats-num green">0</span>
-            <span style="opacity:0.3">|</span>
-            ✕ <span id="score-wrong" class="stats-num red">0</span>
+            <span class="green">正确</span> <span id="score-correct" class="stats-num">0</span>
+            <span style="color:#ddd; margin:0 5px">|</span>
+            <span class="red">错误</span> <span id="score-wrong" class="stats-num">0</span>
         </div>
         
         <div class="timer-wrap">
@@ -238,17 +245,17 @@
             <div class="timer-num" id="timer-num">60</div>
         </div>
 
-        <button style="border:none; background:none; font-weight:600; color:var(--accent); font-size:14px;" onclick="showAnswer()">
+        <button style="border:none; background:transparent; color:var(--accent); font-weight:600; font-size:14px; padding:10px" onclick="showAnswer()">
             看答案
         </button>
     </div>
 
     <div class="stage" onclick="handleBgClick(event)">
-        <div class="guide-text" id="guide">选择第一张牌</div>
+        <div class="guide-text" id="guide">点击卡片开始</div>
 
-        <!-- 2x2 卡片网格 -->
+        <!-- 2x2 区域 -->
         <div class="grid-container" id="grid-box">
-            <!-- JS 生成 4个 slot -->
+            <!-- JS 生成 -->
         </div>
 
         <div class="ops-bar">
@@ -260,7 +267,7 @@
     </div>
 
     <div class="controls">
-        <button class="big-btn btn-undo" onclick="undo()">撤销</button>
+        <button class="big-btn" onclick="undo()">撤销</button>
         <button class="big-btn btn-next" onclick="nextLevel(false)">下一题</button>
     </div>
 
@@ -268,16 +275,15 @@
         <div class="result-box">
             <div class="ans-title" id="overlay-title">参考解法</div>
             <div class="ans-main" id="ans-text"></div>
-            <div style="font-size:12px; color:#ccc">点击继续</div>
+            <div style="font-size:13px; color:#aaa">点击任意处继续</div>
         </div>
     </div>
 
     <script>
-        // 游戏核心状态
         const STATE = {
-            slots: [null, null, null, null], // 4个槽位，存 Card 对象或 null
-            history: [], // 撤销栈
-            selectedIdx: null, // 当前选中的槽位索引 (0-3)
+            slots: [null, null, null, null],
+            history: [],
+            selectedIdx: null,
             selectedOp: null,
             solution: '',
             isPlaying: false,
@@ -288,9 +294,8 @@
             wrong: 0
         };
 
+        // 音效
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // --- 音效系统 ---
         function playSound(type) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
@@ -300,36 +305,35 @@
             const now = audioCtx.currentTime;
 
             if(type === 'tap') {
-                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.setValueAtTime(600, now);
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
                 osc.start(now); osc.stop(now + 0.1);
             } else if(type === 'merge') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(300, now);
-                osc.frequency.linearRampToValueAtTime(500, now + 0.15);
+                osc.frequency.linearRampToValueAtTime(500, now + 0.1);
                 gain.gain.setValueAtTime(0.1, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.2);
-                osc.start(now); osc.stop(now + 0.2);
+                gain.gain.linearRampToValueAtTime(0, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
             } else if(type === 'win') {
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(400, now);
                 osc.frequency.setValueAtTime(800, now + 0.2);
                 gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-                osc.start(now); osc.stop(now + 0.8);
-            } else if(type === 'alarm') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(800, now);
-                gain.gain.setValueAtTime(0.05, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.1);
-                osc.start(now); osc.stop(now + 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+                osc.start(now); osc.stop(now + 1.0);
+            } else if(type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
             }
         }
 
-        // --- 核心逻辑 ---
-
+        // 生成题目
         function generateLevel() {
-            // 求解器
             const solve = (nums) => {
                 if (nums.length === 1) return Math.abs(nums[0] - 24) < 0.001 ? nums[0].toString() : null;
                 for (let i = 0; i < nums.length; i++) {
@@ -355,10 +359,8 @@
 
             STATE.solution = sol;
             const suits = ['♠', '♥', '♣', '♦'];
-            
-            // 填充4个槽位
             STATE.slots = nums.map(n => ({
-                id: Math.random(), // 唯一标识用于动画
+                id: Math.random(),
                 val: n,
                 suit: suits[Math.floor(Math.random() * 4)],
                 isRed: false,
@@ -366,103 +368,72 @@
             }));
             STATE.slots.forEach(c => c.isRed = (c.suit === '♥' || c.suit === '♦'));
 
-            // 重置状态
             STATE.history = [];
             STATE.selectedIdx = null;
             STATE.selectedOp = null;
             STATE.isPlaying = true;
             STATE.isTimeUp = false;
-            
-            document.body.classList.remove('alarm'); // 清除报警
-            renderGrid(true); // 发牌动画
+
+            // 重置背景和动画
+            document.body.className = '';
+            renderGrid(true);
             resetTimer();
             updateUI();
         }
 
-        // 渲染网格 (核心视觉改动)
         function renderGrid(isDeal = false) {
             const container = document.getElementById('grid-box');
             container.innerHTML = '';
-
             STATE.slots.forEach((card, idx) => {
-                const slotEl = document.createElement('div');
-                slotEl.className = `slot ${card ? '' : 'empty'}`;
+                const slot = document.createElement('div');
+                slot.className = `slot ${card ? '' : 'empty'}`;
                 
-                if (card) {
-                    const cardEl = document.createElement('div');
-                    // 类名控制：颜色、选中态、新生成动画、发牌动画
-                    let classes = `card ${card.isRed ? 'red' : 'black'}`;
-                    if (STATE.selectedIdx === idx) classes += ' selected';
-                    if (card.isNew) classes += ' new-born';
-                    if (isDeal) {
-                        classes += ' dealing';
-                        cardEl.style.animationDelay = (idx * 0.08) + 's';
-                    }
-                    
-                    cardEl.className = classes;
+                if(card) {
+                    const el = document.createElement('div');
+                    let cls = `card ${card.isRed ? 'red' : 'black'}`;
+                    if(STATE.selectedIdx === idx) cls += ' selected';
+                    if(card.isNew) cls += ' new-born';
+                    if(isDeal) { cls += ' dealing'; el.style.animationDelay = idx*0.08+'s'; }
+                    el.className = cls;
                     
                     // 格式化数字
-                    let disp = parseFloat(card.val.toFixed(2));
-                    // 转换 JQKA (如果不想要JQKA转换，直接注释下面这行)
-                    // if(disp===1) disp='A'; else if(disp===11) disp='J'; else if(disp===12) disp='Q'; else if(disp===13) disp='K';
-
-                    cardEl.innerHTML = `
-                        <div>${disp}</div>
-                        <div class="suit">${card.suit}</div>
-                    `;
-                    
-                    cardEl.onclick = (e) => {
-                        e.stopPropagation();
-                        onSlotClick(idx);
-                    };
-                    slotEl.appendChild(cardEl);
+                    let val = parseFloat(card.val.toFixed(2));
+                    el.innerHTML = `<div>${val}</div><div class="suit">${card.suit}</div>`;
+                    el.onclick = (e) => { e.stopPropagation(); onSlotClick(idx); };
+                    slot.appendChild(el);
                 }
-                container.appendChild(slotEl);
+                container.appendChild(slot);
             });
         }
 
         function handleBgClick(e) {
-            // 点击背景取消选中
-            if (e.target.classList.contains('stage') || e.target.classList.contains('grid-container')) {
-                STATE.selectedIdx = null;
-                STATE.selectedOp = null;
-                updateUI();
-            }
+            if(e.target.closest('.card') || e.target.closest('.op-btn')) return;
+            STATE.selectedIdx = null;
+            STATE.selectedOp = null;
+            updateUI();
         }
 
         function onSlotClick(idx) {
-            if (!STATE.isPlaying || STATE.isTimeUp) return;
-            
-            // 1. 没选过 -> 选中
-            if (STATE.selectedIdx === null) {
+            if(!STATE.isPlaying || STATE.isTimeUp) return;
+
+            if(STATE.selectedIdx === null) {
                 playSound('tap');
                 STATE.selectedIdx = idx;
-                updateUI();
-                return;
-            }
-
-            // 2. 点自己 -> 取消
-            if (STATE.selectedIdx === idx) {
-                STATE.selectedIdx = null;
+            } else if(STATE.selectedIdx === idx) {
+                STATE.selectedIdx = null; // 取消选中
                 STATE.selectedOp = null;
-                updateUI();
-                return;
-            }
-
-            // 3. 换人 (还没选符号)
-            if (STATE.selectedOp === null) {
+            } else if(STATE.selectedOp === null) {
                 playSound('tap');
-                STATE.selectedIdx = idx;
-                updateUI();
-                return;
+                STATE.selectedIdx = idx; // 换卡
+            } else {
+                // 合并
+                performMerge(STATE.selectedIdx, idx, STATE.selectedOp);
             }
-
-            // 4. 合并计算 (有选人 + 有符号 + 点了另一个人)
-            performMerge(STATE.selectedIdx, idx, STATE.selectedOp);
+            updateUI();
         }
 
         function selectOp(op) {
-            if (!STATE.isPlaying || STATE.isTimeUp || STATE.selectedIdx === null) return;
+            if(!STATE.isPlaying || STATE.isTimeUp || STATE.selectedIdx === null) return;
             playSound('tap');
             STATE.selectedOp = op;
             updateUI();
@@ -471,82 +442,55 @@
         function performMerge(idx1, idx2, op) {
             const c1 = STATE.slots[idx1];
             const c2 = STATE.slots[idx2];
-            if (!c1 || !c2) return;
+            if(!c1 || !c2) return;
 
             let res = 0;
             switch(op) {
                 case '+': res = c1.val + c2.val; break;
                 case '-': res = c1.val - c2.val; break;
                 case '*': res = c1.val * c2.val; break;
-                case '/': 
-                    if(c2.val === 0) return; 
-                    res = c1.val / c2.val; break;
+                case '/': if(c2.val===0) return; res = c1.val / c2.val; break;
             }
 
-            // 记录历史 (Deep Copy)
             STATE.history.push(JSON.parse(JSON.stringify(STATE.slots)));
 
-            // 逻辑：c1 移动到 c2 的位置，c1 变空
-            // 新卡片
             const newCard = {
                 id: Math.random(),
                 val: res,
                 suit: c1.suit,
                 isRed: c1.isRed,
-                isNew: true // 触发动画标记
+                isNew: true
             };
-
-            STATE.slots[idx2] = newCard; // 结果在目标位
-            STATE.slots[idx1] = null;    // 原位变成空虚线框
-
-            // 重置
+            
+            STATE.slots[idx2] = newCard;
+            STATE.slots[idx1] = null;
+            
             STATE.selectedIdx = null;
             STATE.selectedOp = null;
             playSound('merge');
             renderGrid();
             updateUI();
 
-            // 检查是否剩下1张牌
-            const remaining = STATE.slots.filter(x => x !== null);
-            if (remaining.length === 1) {
-                if (Math.abs(remaining[0].val - 24) < 0.01) {
+            // 核心逻辑升级：检查剩余卡片数量
+            const remaining = STATE.slots.filter(s => s !== null);
+            if(remaining.length === 1) {
+                const finalVal = remaining[0].val;
+                if(Math.abs(finalVal - 24) < 0.01) {
                     handleWin();
+                } else {
+                    handleFail();
                 }
             }
         }
 
         function undo() {
-            if (STATE.history.length > 0 && STATE.isPlaying && !STATE.isTimeUp) {
+            if(STATE.history.length > 0 && STATE.isPlaying && !STATE.isTimeUp) {
                 STATE.slots = STATE.history.pop();
                 STATE.selectedIdx = null;
                 STATE.selectedOp = null;
                 renderGrid();
                 updateUI();
             }
-        }
-
-        function updateUI() {
-            // 引导文字
-            const guide = document.getElementById('guide');
-            if (STATE.selectedIdx === null) {
-                guide.innerText = "点击一张卡牌";
-                guide.style.color = "#888";
-            } else if (STATE.selectedOp === null) {
-                guide.innerText = "选择运算符号";
-                guide.style.color = "var(--text-main)";
-            } else {
-                guide.innerText = "点击另一张卡牌合并";
-                guide.style.color = "var(--accent)";
-            }
-
-            // 符号按钮高亮
-            document.querySelectorAll('.op-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.op === STATE.selectedOp);
-            });
-
-            // 刷新Grid已经在renderGrid做了
-            if(!STATE.isPlaying && !STATE.isTimeUp) return; // 游戏结束时不强行刷新grid，保留最后状态
-            renderGrid();
         }
 
         function handleWin() {
@@ -557,11 +501,54 @@
             updateStats();
             
             document.body.classList.remove('alarm');
+            document.body.classList.add('state-win'); // 绿背景
+            
             document.getElementById('guide').innerText = "Success! = 24";
             document.getElementById('guide').style.color = "var(--success)";
             
             fireConfetti();
-            setTimeout(() => nextLevel(true), 1200);
+            setTimeout(() => nextLevel(true), 1500);
+        }
+
+        function handleFail() {
+            STATE.isPlaying = false;
+            clearInterval(STATE.timerId);
+            playSound('fail');
+            STATE.wrong++;
+            updateStats();
+            
+            document.body.classList.remove('alarm');
+            document.body.classList.add('state-fail'); // 红背景
+            
+            document.getElementById('guide').innerText = "算错了...";
+            document.getElementById('guide').style.color = "var(--error)";
+
+            // 自动弹窗
+            setTimeout(() => {
+                document.getElementById('overlay-title').innerText = "算错了，参考答案";
+                document.getElementById('ans-text').innerText = STATE.solution;
+                document.getElementById('overlay').classList.add('active');
+            }, 500);
+        }
+
+        function updateUI() {
+            const guide = document.getElementById('guide');
+            if(!STATE.isPlaying && STATE.isTimeUp) return; // 结束时不更新guide
+            
+            if(STATE.selectedIdx === null) {
+                guide.innerText = "点击一张牌";
+                guide.style.color = "#888";
+            } else if(STATE.selectedOp === null) {
+                guide.innerText = "选择符号";
+                guide.style.color = "var(--text-main)";
+            } else {
+                guide.innerText = "点击另一张牌";
+                guide.style.color = "var(--accent)";
+            }
+
+            document.querySelectorAll('.op-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.op === STATE.selectedOp);
+            });
         }
 
         function updateStats() {
@@ -569,9 +556,23 @@
             document.getElementById('score-wrong').innerText = STATE.wrong;
         }
 
+        function showAnswer() {
+            if(!STATE.solution) return;
+            if(STATE.isPlaying && !STATE.isTimeUp) {
+                // 放弃
+                STATE.wrong++;
+                STATE.isPlaying = false;
+                clearInterval(STATE.timerId);
+                updateStats();
+                document.body.classList.add('state-fail');
+            }
+            document.getElementById('overlay-title').innerText = "参考答案";
+            document.getElementById('ans-text').innerText = STATE.solution;
+            document.getElementById('overlay').classList.add('active');
+        }
+
         function nextLevel(auto) {
-            if (!auto && STATE.isPlaying && !STATE.isTimeUp) {
-                // 主动放弃算错
+            if(!auto && STATE.isPlaying && !STATE.isTimeUp) {
                 STATE.wrong++;
                 updateStats();
             }
@@ -579,29 +580,11 @@
             generateLevel();
         }
 
-        // 修改：只要有题目，不管是否在玩（例如超时），都可以看答案
-        function showAnswer() {
-            if (!STATE.solution) return;
-            
-            // 如果还在玩的时候看答案，算放弃
-            if (STATE.isPlaying && !STATE.isTimeUp) {
-                STATE.wrong++;
-                STATE.isPlaying = false;
-                clearInterval(STATE.timerId);
-                document.body.classList.remove('alarm');
-                updateStats();
-            }
-            
-            document.getElementById('overlay-title').innerText = "本题参考答案";
-            document.getElementById('ans-text').innerText = STATE.solution;
-            document.getElementById('overlay').classList.add('active');
-        }
-
         function closeOverlay() {
             document.getElementById('overlay').classList.remove('active');
-            // 如果是从“超时状态”查看答案后关闭，自动下一题
-            if (STATE.isTimeUp) {
-                nextLevel(true);
+            // 如果是在游戏结束状态关闭弹窗，则开始新一局
+            if(!STATE.isPlaying) {
+                generateLevel();
             }
         }
 
@@ -610,38 +593,32 @@
             STATE.timeLeft = 60;
             const ring = document.getElementById('timer-ring');
             const num = document.getElementById('timer-num');
-            
-            // 138 = 2*PI*22
-            const totalDash = 138;
             ring.style.strokeDashoffset = 0;
             num.innerText = 60;
             num.classList.remove('urgent');
-
+            
             STATE.timerId = setInterval(() => {
                 STATE.timeLeft--;
                 num.innerText = STATE.timeLeft;
-                const offset = totalDash - (STATE.timeLeft / 60) * totalDash;
+                const offset = 138 - (STATE.timeLeft/60)*138;
                 ring.style.strokeDashoffset = offset;
-
-                // 10秒警报
-                if (STATE.timeLeft <= 10) {
+                
+                if(STATE.timeLeft <= 10) {
                     num.classList.add('urgent');
                     document.body.classList.add('alarm');
-                    // 每一秒响一下滴声
-                    playSound('alarm');
                 }
-
-                if (STATE.timeLeft <= 0) {
+                
+                if(STATE.timeLeft <= 0) {
                     clearInterval(STATE.timerId);
                     STATE.isPlaying = false;
-                    STATE.isTimeUp = true; // 标记为超时状态
-                    STATE.wrong++; // 超时算错
+                    STATE.isTimeUp = true;
+                    STATE.wrong++;
                     updateStats();
-                    document.body.classList.remove('alarm');
-                    document.getElementById('guide').innerText = "时间到！";
-                    document.getElementById('guide').style.color = "var(--error)";
                     
-                    // 自动弹窗显示答案
+                    document.body.classList.remove('alarm');
+                    document.body.classList.add('state-fail');
+                    document.getElementById('guide').innerText = "时间到";
+                    
                     showAnswer();
                     document.getElementById('overlay-title').innerText = "时间到 (已计入错误)";
                 }
@@ -649,19 +626,18 @@
         }
 
         function fireConfetti() {
-            for(let i=0; i<50; i++) {
+            for(let i=0; i<60; i++) {
                 const d = document.createElement('div');
                 d.className = 'confetti';
                 d.style.left = Math.random()*100 + 'vw';
                 d.style.backgroundColor = `hsl(${Math.random()*360}, 80%, 60%)`;
-                d.style.animationDuration = (Math.random()*1.5 + 1) + 's';
+                d.style.animationDuration = (Math.random()*1.5+1.5) + 's';
                 document.body.appendChild(d);
-                setTimeout(() => d.remove(), 2500);
+                setTimeout(()=>d.remove(), 3000);
             }
         }
 
         window.onload = generateLevel;
-
     </script>
 </body>
 </html>
