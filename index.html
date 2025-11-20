@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quick 24 | 终极版</title>
+    <title>Quick 24 | 精致版</title>
     <style>
         :root {
             --bg-color: #eef2f5;
@@ -12,14 +12,14 @@
             --accent: #007AFF;
             --success: #34C759;
             --error: #FF3B30;
-            /* 状态背景色 */
-            --bg-win: #e8f5e9;  /* 浅绿 */
-            --bg-fail: #ffebee; /* 浅红 */
+            --bg-win: #e8f5e9;
+            --bg-fail: #ffebee;
             
             /* 阴影 */
-            --shadow-card: 8px 8px 16px rgba(0,0,0,0.1), -8px -8px 16px rgba(255,255,255,0.8);
-            --shadow-sunken: inset 4px 4px 8px rgba(0,0,0,0.05), inset -4px -4px 8px rgba(255,255,255,0.8);
-            --shadow-float: 0 15px 30px rgba(0,122,255,0.2);
+            --shadow-card: 6px 6px 12px rgba(0,0,0,0.08), -6px -6px 12px rgba(255,255,255,0.9);
+            --shadow-sunken: inset 3px 3px 6px rgba(0,0,0,0.05), inset -3px -3px 6px rgba(255,255,255,0.8);
+            /* 选中时的发光阴影 */
+            --shadow-selected: 0 10px 25px rgba(0,122,255,0.4), 0 0 0 4px rgba(0,122,255,0.1);
         }
 
         body {
@@ -35,12 +35,10 @@
             transition: background-color 0.5s ease;
         }
 
-        /* 胜利/失败背景状态类 */
         body.state-win { background-color: var(--bg-win); }
         body.state-fail { background-color: var(--bg-fail); }
-
-        /* 10秒倒计时红色警报 */
         body.alarm { animation: redFlash 1s infinite; }
+
         @keyframes redFlash {
             0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 59, 48, 0); }
             50% { box-shadow: inset 0 0 50px 20px rgba(255, 59, 48, 0.2); }
@@ -67,53 +65,52 @@
         .green { color: var(--success); }
         .red { color: var(--error); }
 
-        /* 倒计时 */
-        .timer-wrap { position: relative; width: 50px; height: 50px; }
+        .timer-wrap { position: relative; width: 46px; height: 46px; }
         svg.timer-svg { transform: rotate(-90deg); }
         circle { fill: none; stroke-width: 4; stroke-linecap: round; }
-        .c-bg { stroke: rgba(0,0,0,0.1); }
+        .c-bg { stroke: rgba(0,0,0,0.05); }
         .c-progress { stroke: var(--accent); transition: stroke-dashoffset 1s linear; }
         .timer-num {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-weight: 700; font-size: 16px; color: var(--text-main);
+            font-weight: 700; font-size: 15px; color: var(--text-main);
         }
         .timer-num.urgent { color: var(--error); }
 
         /* === 游戏舞台 === */
         .stage {
-            flex: 1; width: 100%; max-width: 400px; /* 限制宽度防止在大屏太散 */
+            flex: 1; width: 100%; 
+            /* 修改1：最大宽度缩小，整体缩小 */
+            max-width: 360px; 
             display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             padding: 0 20px; box-sizing: border-box;
         }
 
         .guide-text {
-            height: 30px; color: var(--text-sub); font-size: 15px;
-            margin-bottom: 15px; transition: all 0.3s;
-            font-weight: 500;
+            height: 24px; color: var(--text-sub); font-size: 15px;
+            margin-bottom: 20px; transition: all 0.3s; font-weight: 500;
         }
 
         /* 2x2 网格 */
         .grid-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            width: 100%;
-            margin-bottom: 20px;
+            gap: 16px;
+            /* 修改2：网格宽度缩小到 90%，配合 gap 让卡牌变小 */
+            width: 90%; 
+            margin-bottom: 25px;
         }
 
-        /* 槽位：定义宽高比为 3:4 (0.75) */
         .slot {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 3 / 4; /* 关键修改：3:4 比例 */
-            border-radius: 16px;
+            position: relative; width: 100%;
+            aspect-ratio: 3 / 4;
+            border-radius: 14px;
         }
         
         .slot.empty {
-            border: 2px dashed rgba(0,0,0,0.1);
-            background: rgba(255,255,255,0.2);
+            border: 2px dashed rgba(0,0,0,0.08);
+            background: rgba(255,255,255,0.3);
             box-sizing: border-box;
         }
 
@@ -121,35 +118,38 @@
         .card {
             width: 100%; height: 100%;
             background: #fff;
-            border-radius: 16px;
+            border-radius: 14px;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            font-size: 42px; font-weight: 700;
+            font-size: 36px; /* 字号微调 */
+            font-weight: 700;
             color: var(--text-main);
             box-shadow: var(--shadow-card);
             cursor: pointer;
             position: relative;
-            border: 3px solid transparent;
-            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性过渡 */
+            /* 修改3：边框加粗，准备显示选中色 */
+            border: 4px solid transparent; 
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-sizing: border-box; /* 确保边框在内 */
         }
 
         .card .suit {
-            font-size: 22px; position: absolute;
-            top: 12px; right: 12px; opacity: 0.6;
+            font-size: 18px; position: absolute;
+            top: 8px; right: 10px; opacity: 0.5;
         }
 
         .card.red { color: #ff453a; }
         .card.black { color: #2c3e50; }
 
-        /* 选中状态 */
+        /* 修改4：选中状态 - 强烈的视觉反馈 */
         .card.selected {
-            border-color: var(--accent);
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: var(--shadow-float);
-            z-index: 5;
+            border-color: var(--accent); /* 亮蓝色边框 */
+            transform: translateY(-10px) scale(1.05); /* 上浮+放大 */
+            box-shadow: var(--shadow-selected); /* 蓝色光晕 */
+            background-color: #fff;
+            z-index: 10;
         }
 
-        /* 动画 */
         .card.dealing { animation: deal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
         @keyframes deal {
             from { opacity: 0; transform: translateY(40px) scale(0.8); }
@@ -165,34 +165,34 @@
 
         /* === 运算符 === */
         .ops-bar {
-            display: flex; gap: 12px; margin-bottom: 20px;
+            display: flex; gap: 15px; margin-bottom: 25px;
         }
         .op-btn {
-            width: 56px; height: 56px;
+            width: 52px; height: 52px; /* 稍微调小适配卡牌 */
             border-radius: 50%; border: none;
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
             box-shadow: var(--shadow-card);
-            font-size: 26px; color: var(--text-main);
+            font-size: 24px; color: var(--text-main);
             display: flex; align-items: center; justify-content: center;
             transition: all 0.15s;
             backdrop-filter: blur(4px);
         }
-        .op-btn:active { box-shadow: var(--shadow-sunken); transform: scale(0.92); }
+        .op-btn:active { transform: scale(0.9); }
         .op-btn.active {
             background: var(--accent); color: #fff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,122,255,0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,122,255,0.3);
         }
 
-        /* === 底部按钮 === */
+        /* === 底部 === */
         .controls {
-            width: 90%; max-width: 360px;
+            width: 90%; max-width: 320px;
             display: flex; gap: 15px; margin-bottom: 30px;
         }
         .big-btn {
-            flex: 1; padding: 15px 0;
-            border-radius: 25px; border: none;
-            font-size: 16px; font-weight: 600;
+            flex: 1; padding: 14px 0;
+            border-radius: 20px; border: none;
+            font-size: 15px; font-weight: 600;
             box-shadow: var(--shadow-card);
             background: rgba(255,255,255,0.9);
             color: var(--text-main);
@@ -204,28 +204,26 @@
         /* === 弹窗 === */
         .overlay {
             position: fixed; inset: 0;
-            background: rgba(255,255,255,0.6);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             display: flex; align-items: center; justify-content: center;
             opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 100;
         }
         .overlay.active { opacity: 1; pointer-events: auto; }
         
         .result-box {
-            background: #fff; padding: 40px; border-radius: 30px;
-            text-align: center; width: 80%; max-width: 300px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            background: #fff; padding: 35px; border-radius: 25px;
+            text-align: center; width: 80%; max-width: 280px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
             transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .overlay.active .result-box { transform: scale(1); }
         
-        .ans-title { color: #999; font-size: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .ans-main { font-size: 36px; color: var(--text-main); font-weight: 800; margin-bottom: 25px; }
+        .ans-title { color: #999; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .ans-main { font-size: 32px; color: var(--text-main); font-weight: 800; margin-bottom: 20px; }
 
-        /* 礼花 */
         .confetti { position: absolute; width: 8px; height: 8px; pointer-events: none; animation: fall 2.5s linear forwards; }
         @keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-
     </style>
 </head>
 <body>
@@ -238,9 +236,9 @@
         </div>
         
         <div class="timer-wrap">
-            <svg class="timer-svg" width="50" height="50">
-                <circle class="c-bg" cx="25" cy="25" r="22"></circle>
-                <circle class="c-progress" id="timer-ring" cx="25" cy="25" r="22" stroke-dasharray="138" stroke-dashoffset="0"></circle>
+            <svg class="timer-svg" width="46" height="46">
+                <circle class="c-bg" cx="23" cy="23" r="20"></circle>
+                <circle class="c-progress" id="timer-ring" cx="23" cy="23" r="20" stroke-dasharray="125" stroke-dashoffset="0"></circle>
             </svg>
             <div class="timer-num" id="timer-num">60</div>
         </div>
@@ -253,10 +251,8 @@
     <div class="stage" onclick="handleBgClick(event)">
         <div class="guide-text" id="guide">点击卡片开始</div>
 
-        <!-- 2x2 区域 -->
-        <div class="grid-container" id="grid-box">
-            <!-- JS 生成 -->
-        </div>
+        <!-- 卡片区域 -->
+        <div class="grid-container" id="grid-box"></div>
 
         <div class="ops-bar">
             <button class="op-btn" data-op="+" onclick="selectOp('+')">+</button>
@@ -294,7 +290,6 @@
             wrong: 0
         };
 
-        // 音效
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
@@ -332,7 +327,6 @@
             }
         }
 
-        // 生成题目
         function generateLevel() {
             const solve = (nums) => {
                 if (nums.length === 1) return Math.abs(nums[0] - 24) < 0.001 ? nums[0].toString() : null;
@@ -374,7 +368,6 @@
             STATE.isPlaying = true;
             STATE.isTimeUp = false;
 
-            // 重置背景和动画
             document.body.className = '';
             renderGrid(true);
             resetTimer();
@@ -396,7 +389,6 @@
                     if(isDeal) { cls += ' dealing'; el.style.animationDelay = idx*0.08+'s'; }
                     el.className = cls;
                     
-                    // 格式化数字
                     let val = parseFloat(card.val.toFixed(2));
                     el.innerHTML = `<div>${val}</div><div class="suit">${card.suit}</div>`;
                     el.onclick = (e) => { e.stopPropagation(); onSlotClick(idx); };
@@ -420,13 +412,12 @@
                 playSound('tap');
                 STATE.selectedIdx = idx;
             } else if(STATE.selectedIdx === idx) {
-                STATE.selectedIdx = null; // 取消选中
+                STATE.selectedIdx = null;
                 STATE.selectedOp = null;
             } else if(STATE.selectedOp === null) {
                 playSound('tap');
-                STATE.selectedIdx = idx; // 换卡
+                STATE.selectedIdx = idx;
             } else {
-                // 合并
                 performMerge(STATE.selectedIdx, idx, STATE.selectedOp);
             }
             updateUI();
@@ -471,7 +462,6 @@
             renderGrid();
             updateUI();
 
-            // 核心逻辑升级：检查剩余卡片数量
             const remaining = STATE.slots.filter(s => s !== null);
             if(remaining.length === 1) {
                 const finalVal = remaining[0].val;
@@ -499,13 +489,10 @@
             playSound('win');
             STATE.correct++;
             updateStats();
-            
             document.body.classList.remove('alarm');
-            document.body.classList.add('state-win'); // 绿背景
-            
+            document.body.classList.add('state-win');
             document.getElementById('guide').innerText = "Success! = 24";
             document.getElementById('guide').style.color = "var(--success)";
-            
             fireConfetti();
             setTimeout(() => nextLevel(true), 1500);
         }
@@ -516,14 +503,10 @@
             playSound('fail');
             STATE.wrong++;
             updateStats();
-            
             document.body.classList.remove('alarm');
-            document.body.classList.add('state-fail'); // 红背景
-            
+            document.body.classList.add('state-fail');
             document.getElementById('guide').innerText = "算错了...";
             document.getElementById('guide').style.color = "var(--error)";
-
-            // 自动弹窗
             setTimeout(() => {
                 document.getElementById('overlay-title').innerText = "算错了，参考答案";
                 document.getElementById('ans-text').innerText = STATE.solution;
@@ -533,7 +516,7 @@
 
         function updateUI() {
             const guide = document.getElementById('guide');
-            if(!STATE.isPlaying && STATE.isTimeUp) return; // 结束时不更新guide
+            if(!STATE.isPlaying && STATE.isTimeUp) return;
             
             if(STATE.selectedIdx === null) {
                 guide.innerText = "点击一张牌";
@@ -549,6 +532,9 @@
             document.querySelectorAll('.op-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.op === STATE.selectedOp);
             });
+            
+            // 确保样式更新
+            renderGrid();
         }
 
         function updateStats() {
@@ -559,7 +545,6 @@
         function showAnswer() {
             if(!STATE.solution) return;
             if(STATE.isPlaying && !STATE.isTimeUp) {
-                // 放弃
                 STATE.wrong++;
                 STATE.isPlaying = false;
                 clearInterval(STATE.timerId);
@@ -582,10 +567,7 @@
 
         function closeOverlay() {
             document.getElementById('overlay').classList.remove('active');
-            // 如果是在游戏结束状态关闭弹窗，则开始新一局
-            if(!STATE.isPlaying) {
-                generateLevel();
-            }
+            if(!STATE.isPlaying) generateLevel();
         }
 
         function resetTimer() {
@@ -600,7 +582,7 @@
             STATE.timerId = setInterval(() => {
                 STATE.timeLeft--;
                 num.innerText = STATE.timeLeft;
-                const offset = 138 - (STATE.timeLeft/60)*138;
+                const offset = 125 - (STATE.timeLeft/60)*125;
                 ring.style.strokeDashoffset = offset;
                 
                 if(STATE.timeLeft <= 10) {
@@ -614,11 +596,8 @@
                     STATE.isTimeUp = true;
                     STATE.wrong++;
                     updateStats();
-                    
                     document.body.classList.remove('alarm');
                     document.body.classList.add('state-fail');
-                    document.getElementById('guide').innerText = "时间到";
-                    
                     showAnswer();
                     document.getElementById('overlay-title').innerText = "时间到 (已计入错误)";
                 }
